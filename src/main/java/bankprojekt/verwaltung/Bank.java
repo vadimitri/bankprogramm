@@ -184,4 +184,20 @@ public class Bank {
 
         return false;
     }
+
+    /**
+     * Fügt ein Mock-Konto in die Bank ein
+     * @param k Das einzufügende Konto (Mock)
+     * @return Die zugewiesene Kontonummer
+     */
+    public long mockEinfuegen(Konto k) {
+        Map.Entry<Long, Konto> hoechsterEntry = kontos.floorEntry(100000000L);
+        if (hoechsterEntry == null) {
+            kontos.put(0L, k);
+            return 0L;
+        }
+        long neueNummer = hoechsterEntry.getKey() + 1L;
+        kontos.put(neueNummer, k);
+        return neueNummer;
+    }
 }

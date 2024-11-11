@@ -70,8 +70,6 @@ class BankTest {
 
     }
 
-
-
     @Test
     void kontoLoeschen() {
         assertEquals(dkb.girokontoErstellen(anna), 0L);
