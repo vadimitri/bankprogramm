@@ -16,7 +16,7 @@ public class Kundenmenge {
 	/**
 	 * erstellt eine Menge von Kunden und löscht die unnötigen
 	 * wieder
-	 * @param args
+	 * @param args Argumente
 	 */
 	public static void main(String[] args) {
 		Kunde anna = new Kunde("Anna", "Müller", "hier", LocalDate.parse("1979-05-14"));
