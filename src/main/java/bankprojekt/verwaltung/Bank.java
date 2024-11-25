@@ -2,7 +2,10 @@ package bankprojekt.verwaltung;
 
 import bankprojekt.verarbeitung.*;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -200,4 +203,48 @@ public class Bank {
         kontos.put(neueNummer, k);
         return neueNummer;
     }
+
+    /**
+     * Zahlt auf alle Konten von Kunden, die in diesem Jahr 18 werden den gegebenen Betrag ein.
+     * @param betrag Betrag, der einzuzahlen ist.
+     */
+    public void schenkungAnNeuerwachsene(Geldbetrag betrag) {
+        if (betrag == null) {
+            throw new NullPointerException("Betrag darf nicht null sein");
+        }
+        kontos.values().stream()
+                .filter(konto -> konto.getInhaber().getGeburtstag()
+                        .plusYears(18)
+                        .getYear() == LocalDate.now().getYear())
+                .forEach(konto -> konto.einzahlen(betrag));
+    }
+
+    /**
+     * Liefert Liste aller Kunden mit negativem Kontostand zurück
+     * @return Liste aller Kunden mit negativem Kontostand
+     */
+    public List<Kunde> getKundenMitLeeremKonto() {
+        return kontos.values().stream()
+                .filter(konto -> konto.getKontostand().isNegativ())
+                .map(Konto::getInhaber)
+                .distinct()
+                .toList();
+    }
+
+
+    /**
+     * Gibt Anzahl der Kunden über 67 zurück
+     * @return Anzahl der Senioren über 67
+     */
+    public int getAnzahlSenioren() {
+        return kontos.values().stream()
+                .map(Konto::getInhaber)
+                .filter(kunde -> Period.between(kunde.getGeburtstag(), LocalDate.now()).getYears() >= 67)
+                .distinct()
+                .mapToInt(konto -> 1)
+                .sum();
+    }
+
+
 }
+

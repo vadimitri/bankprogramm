@@ -42,6 +42,7 @@ public class BankTests {
 
 
         when(mockKontoVon.getInhaber()).thenReturn(mockKundeA);
+        when(mockKontoVon.getKontonummer()).thenReturn(1L);
         when(mockKontoNach.getInhaber()).thenReturn(mockKundeB);
     }
 
@@ -52,6 +53,7 @@ public class BankTests {
         boolean result = bank.kontoLoeschen(kontoNr);
 
         assertTrue(result);
+        assertFalse(bank.getAlleKontonummern().contains(1L));
     }
 
     @Test
@@ -183,6 +185,10 @@ public class BankTests {
         assertFalse(bank.geldUeberweisen(kontoNrVon, kontoNrNach, betrag, string));
 
     }
+
+    /*
+    TODO
+     */
 
 }
 
