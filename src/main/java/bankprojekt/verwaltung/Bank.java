@@ -207,12 +207,14 @@ public class Bank {
     /**
      * Zahlt auf alle Konten von Kunden, die in diesem Jahr 18 werden den gegebenen Betrag ein.
      * @param betrag Betrag, der einzuzahlen ist.
+     * @throws IllegalArgumentException wenn betrag null oder negativ ist
      */
     public void schenkungAnNeuerwachsene(Geldbetrag betrag) {
         if (betrag == null) {
             throw new NullPointerException("Betrag darf nicht null sein");
         }
-        kontos.values().stream()
+        kontos.values()
+                .stream()
                 .filter(konto -> konto.getInhaber().getGeburtstag()
                         .plusYears(18)
                         .getYear() == LocalDate.now().getYear())
@@ -224,7 +226,9 @@ public class Bank {
      * @return Liste aller Kunden mit negativem Kontostand
      */
     public List<Kunde> getKundenMitLeeremKonto() {
-        return kontos.values().stream()
+        return kontos
+                .values()
+                .stream()
                 .filter(konto -> konto.getKontostand().isNegativ())
                 .map(Konto::getInhaber)
                 .distinct()
