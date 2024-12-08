@@ -19,7 +19,7 @@ public class Aktienkonto extends Konto {
         super();
         this.depot = new HashMap<>();
         this.aktienDatenbank = new HashMap<>();
-        this.scheduler = Executors.newScheduledThreadPool(2);
+        this.scheduler = Executors.newScheduledThreadPool(5);
     }
 
     /**
@@ -55,7 +55,6 @@ public class Aktienkonto extends Konto {
                 } else {
                     future.complete(0.0);
                 }
-                scheduler.shutdown();
             }
         }, 0, 100, TimeUnit.MILLISECONDS);
         return future;
@@ -84,7 +83,6 @@ public class Aktienkonto extends Konto {
                 einzahlen(gesamtgewinn);
                 depot.remove(wkn);
                 future.complete(gesamtgewinn.getBetrag());
-                scheduler.shutdown();
             }
         }, 0, 100, TimeUnit.MILLISECONDS);
 
@@ -118,6 +116,9 @@ public class Aktienkonto extends Konto {
     }
 
     public void shutdown() {
+        for (Aktie aktie : aktienDatenbank.values()) {
+            aktie.shutdown();
+        }
         aktienDatenbank.clear();
         scheduler.shutdown();
     }
@@ -162,9 +163,9 @@ public class Aktienkonto extends Konto {
             System.out.println("GOOGL gekauft fuer: " + preis3);
 
             // Verkaufsauftraege
-            Future<Double> verkauf1 = konto.verkaufsauftrag("865985", new Geldbetrag(165.0));
-            Future<Double> verkauf2 = konto.verkaufsauftrag("870747", new Geldbetrag(108.0));
-            Future<Double> verkauf3 = konto.verkaufsauftrag("A14Y6F", new Geldbetrag(2014.0));
+            Future<Double> verkauf1 = konto.verkaufsauftrag("865985", new Geldbetrag(154.0));
+            Future<Double> verkauf2 = konto.verkaufsauftrag("870747", new Geldbetrag(101.0));
+            Future<Double> verkauf3 = konto.verkaufsauftrag("A14Y6F", new Geldbetrag(200.0));
             Double verkaufspreis1 = verkauf1.get();
             Double verkaufspreis2 = verkauf2.get();
             Double verkaufspreis3 = verkauf3.get();
