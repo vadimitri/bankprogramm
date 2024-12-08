@@ -36,7 +36,6 @@ public class Aktie {
         executor.scheduleAtFixedRate(() -> {
             double kursaenderung = random.nextDouble() * 6 - 3;
             kurs = kurs * (1 + kursaenderung / 100);
-            System.out.println("Kurs aenderung: " + kurs);
         }, 0, zeit, TimeUnit.SECONDS);
     }
 
