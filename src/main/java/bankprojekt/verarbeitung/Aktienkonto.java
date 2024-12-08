@@ -77,7 +77,6 @@ public class Aktienkonto extends Konto {
         }
 
         Aktie aktie = aktienDatenbank.get(wkn);
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleWithFixedDelay(() -> {
             // Wenn Aktie über bestimmten minimalwert ist, wird verkauft
             if (aktie.getKurs() >= minimalpreis.getBetrag()) {
