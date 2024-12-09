@@ -17,7 +17,7 @@ public class Aktienkonto extends Konto {
      */
     public Aktienkonto() {
         super();
-        this.depot = new HashMap<>();
+        this.depot = new HashMap<>(); // ConcurrentHashMap
         this.aktienDatenbank = new HashMap<>();
         this.scheduler = Executors.newScheduledThreadPool(5);
     }
@@ -174,9 +174,8 @@ public class Aktienkonto extends Konto {
             System.out.println("Verkaufserlös GOOGL: " + verkaufspreis3);
 
         } catch (InterruptedException | ExecutionException e) {
-            System.err.println("Fehler bei der Ausführung: " + e.getMessage());
+            System.err.println("Fehler: " + e.getMessage());
         } finally {
-            // Aufräumen
             anzeige.shutdown();
             konto.shutdown();
         }
