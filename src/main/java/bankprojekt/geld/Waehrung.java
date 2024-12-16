@@ -1,9 +1,11 @@
 package bankprojekt.geld;
 
+import java.io.Serializable;
+
 /**
  * Enumeration von ausgwählten Währungen und deren Umrechnungskurs ggü. dem Euro
  */
-public enum Waehrung {
+public enum Waehrung implements Serializable {
     /**
      * Euro
      */

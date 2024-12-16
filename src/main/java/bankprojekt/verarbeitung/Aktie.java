@@ -1,40 +1,55 @@
 package bankprojekt.verarbeitung;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Aktie {
+    private static Map<String, Aktie> alleAktien = new HashMap<>();
     private String wkn;
-    private double kurs;
-    private final ScheduledExecutorService executor;
+    private Geldbetrag kurs;
     private final Random random;
+    private final ScheduledExecutorService executor;
     private Condition kursHoch;
     private Condition kursRunter;
     private Lock aktienlock;
 
     /**
-     * Konstruktor für eine Aktie.
+     * gibt die Aktie mit der gewünschten Wertpapierkennnummer zurück
      * @param wkn Wertpapierkennnummer
-     * @param initialKurs Kurs, mit dem die Aktie "anfängt".
+     * @return Aktie mit der angegebenen Wertpapierkennnummer oder null, wenn es diese WKN
+     * 			nicht gibt.
      */
-    public Aktie(String wkn, double initialKurs) {
+    public static Aktie getAktie(String wkn) {
+        return alleAktien.get(wkn);
+    }
 
+    /**
+     * erstellt eine neu Aktie mit den angegebenen Werten
+     * @param wkn Wertpapierkennnummer
+     * @param k aktueller Kurs
+     * @throws IllegalArgumentException wenn einer der Parameter null bzw. negativ ist
+     * 		                            oder es eine Aktie mit dieser WKN bereits gibt
+     */
+    public Aktie(String wkn, Geldbetrag k) {
+        if(wkn == null || k == null || k.isNegativ() || alleAktien.containsKey(wkn))
+            throw new IllegalArgumentException();
         this.wkn = wkn;
-        this.kurs = initialKurs;
+        this.kurs = k;
         this.random = new Random();
         this.aktienlock = new ReentrantLock();
         this.kursHoch = aktienlock.newCondition();
         this.kursRunter = aktienlock.newCondition();
         this.executor = Executors.newSingleThreadScheduledExecutor();
-        kusaenderung = executor.scheduleAtFixedRate(() -> this.kursaendern());
+        alleAktien.put(wkn, this);
+        int zeit = random.nextInt(6) + 1;
+        executor.scheduleAtFixedRate(this::kursaendern, 0, zeit, TimeUnit.SECONDS );
 
-        startKursAenderungen();
+
     }
 
     public void kursaendern() {
@@ -49,27 +64,41 @@ public class Aktie {
         }
         aktienlock.unlock();
     }
+
+
     /**
-     * Methode, die den Kurs auf unvorhersehbare Weise ändert
+     * Wertpapierkennnummer
+     * @return WKN der Aktie
      */
-    private void startKursAenderungen() {
-        int zeit = random.nextInt(6) + 1;
-
-        executor.scheduleAtFixedRate(() -> {
-            double kursaenderung = random.nextDouble() * 6 - 3;
-            kurs = kurs * (1 + kursaenderung / 100);
-        }, 0, zeit, TimeUnit.SECONDS);
-    }
-
-    public String getWKN() {
+    public String getWkn() {
         return wkn;
     }
 
-    public double getKurs() {
+    /**
+     * aktueller Kurs
+     * @return Kurs der Aktie
+     */
+    public Geldbetrag getKurs() {
         return kurs;
     }
 
+
+    public Condition getKursHoch() {
+        return kursHoch;
+    }
+
+    public Condition getKursRunter() {
+        return kursRunter;
+    }
+
+    public Lock getAktienLock() {
+        return aktienlock;
+    }
+
+    public Map<String, Aktie> getAlleAktien() {
+        return null;
+    }
+
     public void shutdown() {
-        executor.shutdown();
     }
 }

@@ -2,10 +2,12 @@ package bankprojekt.verarbeitung;
 
 import bankprojekt.geld.Waehrung;
 
+import java.io.Serializable;
+
 /**
  * stellt ein allgemeines Bank-Konto dar
  */
-public abstract class Konto implements Comparable<Konto>
+public abstract class Konto implements Comparable<Konto>, Serializable
 {
 	/**
 	 * gibt this auf der Konsole aus

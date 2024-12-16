@@ -2,9 +2,7 @@ package bankprojekt.verwaltung;
 
 import bankprojekt.verarbeitung.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.*;
@@ -14,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * Bankverwaltungsklasse für das Erstellen von Konten und manipulieren dieser
  */
-public class Bank {
+public class Bank implements Serializable {
 
     /**
      * Sortierte Map an Kontos
@@ -252,12 +250,73 @@ public class Bank {
                 .sum();
     }
 
+    /**
+     * Speichert ein Bank Objekt, falls dies möglich ist.
+     * @param ziel Ziel des Outputstreams
+     * @throws IOException wenn speichern der Bank fehlgeschlagen ist
+     */
     public void speichern(OutputStream ziel) throws IOException {
+        if (ziel == null)
+            throw new NullPointerException();
+        try (ObjectOutputStream oos = new ObjectOutputStream(ziel)) {
+            oos.writeObject(this);
+            oos.flush();
+        }
 
     }
 
-    public static Bank einlesen(InputStream quelle) {
+    /**
+     *
+     * @param quelle
+     * @return Bank Objekt oder leere Bank, wenn lesen des Streams fehlschlägt
+     * @throws ClassNotFoundException
+     * @throws IOException wenn speichern der Bank fehlgeschlagen ist
+     */
+    public static Bank einlesen(InputStream quelle) throws IOException, ClassNotFoundException {
+        if (quelle == null)
+            throw new NullPointerException();
+        try (ObjectInputStream ois = new ObjectInputStream(quelle)) {
+            return (Bank) ois.readObject();
+        }
+    }
 
+
+
+
+
+    public static void main(String[] args) {
+        try {
+            Bank bank = new Bank(12345678);
+            Kunde kunde1 = new Kunde("Max", "Mustermann", "Musterstr. 1", LocalDate.of(1990, 1, 1));
+            Kunde kunde2 = new Kunde("Erika", "Musterfrau", "Musterstr. 2", LocalDate.of(1995, 2, 2));
+            // Testkontos
+            long konto1 = bank.girokontoErstellen(kunde1);
+            long  konto2 = bank.sparbuchErstellen(kunde2);
+            bank.geldEinzahlen(konto1, new Geldbetrag(1234));
+            bank.geldEinzahlen(konto2, new Geldbetrag(567));
+
+            System.out.println("Bank Objekt 1:");
+            System.out.println(bank.getAlleKonten());
+
+            try (FileOutputStream fos = new FileOutputStream("bank")) {
+                bank.speichern(fos);
+                System.out.println("Bank wurde gespeichert.");
+            }
+
+
+            Bank bank2;
+            try (FileInputStream fis = new FileInputStream("bank")) {
+                bank2 = Bank.einlesen(fis);
+                System.out.println("\n Bank 2:");
+                System.out.println(bank2.getAlleKonten());
+
+                System.out.println("\nBankleitzahl 1: " + bank.getBankleitzahl());
+                System.out.println("Bankleitzahl 2: " + bank2.getBankleitzahl());
+            }
+
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("Fehler beim Speichern oder Laden der Bank: " + e.getMessage());
+        }
     }
 
 

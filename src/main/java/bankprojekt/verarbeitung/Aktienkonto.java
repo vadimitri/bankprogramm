@@ -3,13 +3,15 @@ package bankprojekt.verarbeitung;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Aktienkonto extends Konto {
     // Map des Depots mit wkn und Anzahl der gekauften Aktien
-    private Map<String, Integer> depot;
+    private HashMap<String, Integer> depot;
     // Alle kaufbaren Aktien
-    private Map<String, Aktie> aktienDatenbank;
     ScheduledExecutorService scheduler;
+    // Konto lock
+    private ReentrantLock kontolock = new ReentrantLock();
 
 
     /**
@@ -18,7 +20,6 @@ public class Aktienkonto extends Konto {
     public Aktienkonto() {
         super();
         this.depot = new HashMap<>(); // ConcurrentHashMap
-        this.aktienDatenbank = new HashMap<>();
         this.scheduler = Executors.newScheduledThreadPool(5);
     }
 
@@ -31,33 +32,23 @@ public class Aktienkonto extends Konto {
      */
     public Future<Double> kaufauftrag(String wkn, int anzahl, Geldbetrag hoechstpreis) {
 
-        CompletableFuture<Double> future = new CompletableFuture<>();
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-        Aktie aktie = aktienDatenbank.get(wkn);
-        if (aktie == null) {
-            future.complete(0.0);
-            return future;
-        }
-
-        scheduler.scheduleWithFixedDelay(() -> {
-            // Wenn Aktie unter bestimmten hoechstpreis ist, wird gekauft
-            if (aktie.getKurs() <= hoechstpreis.getBetrag()) {
-                Geldbetrag gesamtpreis = new Geldbetrag(aktie.getKurs() * anzahl);
-                if (getKontostand().compareTo(gesamtpreis) >= 0) {
-                    try {
-                        abheben(gesamtpreis);
-                    } catch (GesperrtException e) {
-                        throw new RuntimeException(e);
+        return scheduler.schedule(() -> {
+                    Aktie aktie = Aktie.getAktie(wkn);
+                    if (aktie == null)
+                        return 0.0;
+                    while (aktie.getKurs().compareTo(hoechstpreis) > 0) {
+                        aktie.getAktienLock().lock();
+                        aktie.getKursHoch().await();
+                        aktie.getAktienLock().unlock();
                     }
-                    // Merge, falls mehrmals mehrere Aktien gekauft werden
-                    depot.merge(wkn, anzahl, Integer::sum);
-                    future.complete(gesamtpreis.getBetrag());
-                } else {
-                    future.complete(0.0);
-                }
-            }
-        }, 0, 100, TimeUnit.MILLISECONDS);
-        return future;
+                    Geldbetrag kaufKosten = new Geldbetrag(aktie.getKurs().getBetrag() * anzahl,
+                            aktie.getKurs().getWaehrung());
+                    depot.put(wkn, anzahl);
+                    return abheben(kaufKosten) ? kaufKosten.getBetrag() : 0.0;
+                },
+                100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -67,26 +58,28 @@ public class Aktienkonto extends Konto {
      * @return Geldbetrag in double, der als Erlös zurück kam
      */
     public Future<Double> verkaufsauftrag(String wkn, Geldbetrag minimalpreis) {
-        CompletableFuture<Double> future = new CompletableFuture<>();
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-        Integer anzahl = depot.get(wkn);
-        if (anzahl == null || anzahl == 0) {
-            future.complete(0.0);
-            return future;
-        }
+        return scheduler.schedule(() -> {
 
-        Aktie aktie = aktienDatenbank.get(wkn);
-        scheduler.scheduleWithFixedDelay(() -> {
-            // Wenn Aktie über bestimmten minimalwert ist, wird verkauft
-            if (aktie.getKurs() >= minimalpreis.getBetrag()) {
-                Geldbetrag gesamtgewinn = new Geldbetrag(aktie.getKurs() * anzahl);
-                einzahlen(gesamtgewinn);
-                depot.remove(wkn);
-                future.complete(gesamtgewinn.getBetrag());
+            Aktie aktie = Aktie.getAktie(wkn);
+            if (!depot.containsKey(wkn) || depot.get(wkn) <= 0 || aktie == null) {
+                return .0;
             }
-        }, 0, 100, TimeUnit.MILLISECONDS);
 
-        return future;
+            while (aktie.getKurs().compareTo(minimalpreis) < 0) {
+                aktie.getAktienLock().lock();
+                aktie.getKursRunter().await();
+                aktie.getAktienLock().unlock();
+            }
+            kontolock.lock();
+            Geldbetrag gewinn = new Geldbetrag(aktie.getKurs().getBetrag() * depot.get(wkn),
+                    aktie.getKurs().getWaehrung());
+            einzahlen(gewinn);
+            depot.put(wkn, 0);
+            kontolock.unlock();
+            return gewinn.getBetrag();
+        }, 0, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -111,29 +104,15 @@ public class Aktienkonto extends Konto {
             return false;
     }
 
-    public void setAktienDatenbank(Aktie aktie) {
-        aktienDatenbank.put(aktie.getWKN(), aktie);
-    }
 
-    public void shutdown() {
-        for (Aktie aktie : aktienDatenbank.values()) {
-            aktie.shutdown();
-        }
-        aktienDatenbank.clear();
-        scheduler.shutdown();
-    }
 
     public static void main(String[] args) {
         // Big Tech Aktien weil AI so boomed
-        Aktie apple = new Aktie("865985", 150.0);
-        Aktie microsoft = new Aktie("870747", 100.0);
-        Aktie google = new Aktie("A14Y6F", 200.0);
+        Aktie apple = new Aktie("865985", new Geldbetrag(150.0));
+        Aktie microsoft = new Aktie("870747", new Geldbetrag(100.0));
+        Aktie google = new Aktie("A14Y6F", new Geldbetrag(200.0));
 
-        //  Aktien zu der Aktiendatenbank hinzugefügt
         Aktienkonto konto = new Aktienkonto();
-        konto.setAktienDatenbank(apple);
-        konto.setAktienDatenbank(microsoft);
-        konto.setAktienDatenbank(google);
         // Sattes Startkapital
         konto.einzahlen(new Geldbetrag(100000));
 
@@ -177,7 +156,6 @@ public class Aktienkonto extends Konto {
             System.err.println("Fehler: " + e.getMessage());
         } finally {
             anzeige.shutdown();
-            konto.shutdown();
         }
     }
 }
