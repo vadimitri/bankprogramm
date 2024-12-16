@@ -152,8 +152,25 @@ public abstract class Konto implements Comparable<Konto>, Serializable
 	 * @return true, wenn die Abhebung geklappt hat, 
 	 * 		   false, wenn sie abgelehnt wurde
 	 */
-	public abstract boolean abheben(Geldbetrag betrag) 
-								throws GesperrtException;
+	public final boolean abheben(Geldbetrag betrag) throws GesperrtException {
+		if (betrag == null || betrag.isNegativ()) {
+			throw new IllegalArgumentException("Betrag ungültig");
+		}
+		if(this.isGesperrt())
+			throw new GesperrtException(this.getKontonummer());
+
+		if (betrag.compareTo(getGrenzwert(betrag)) <= 0) {
+			setKontostand(getKontostand().minus(betrag));
+			abspeichern(betrag);
+			return true;
+		}
+		else
+			return false;
+	}
+
+	protected abstract Geldbetrag getGrenzwert(Geldbetrag betrag);
+
+	protected void abspeichern(Geldbetrag betrag) {}
 	
 	/**
 	 * sperrt das Konto, Aktionen zum Schaden des Benutzers sind nicht mehr möglich.

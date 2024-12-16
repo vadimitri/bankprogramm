@@ -81,6 +81,14 @@ public class Bank implements Serializable {
         return neueNummer;
     }
 
+    //Abstract-Factory-Muster (Aufgabe 11)
+
+    public long kontoErstellen(Kontofabrik fabrik, Kunde inhaber) {
+
+    }
+
+
+
     /**
      * Liefert einen String mit allen Konten zurück
      * @return String mit allen Konten und deren Kontostand

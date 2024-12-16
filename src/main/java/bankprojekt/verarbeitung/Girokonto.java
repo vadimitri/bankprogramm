@@ -96,20 +96,9 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
     	return ausgabe;
     }
 
-	@Override
-	public boolean abheben(Geldbetrag betrag) throws GesperrtException{
-		if (betrag == null || betrag.isNegativ()) {
-			throw new IllegalArgumentException("Betrag ungültig");
-		}
-		if(this.isGesperrt())
-			throw new GesperrtException(this.getKontonummer());
-		if (!getKontostand().plus(dispo).minus(betrag).isNegativ())
-		{
-			setKontostand(getKontostand().minus(betrag));
-			return true;
-		}
-		else
-			return false;
+
+	protected Geldbetrag getGrenzwert(Geldbetrag betrag) {
+		return getKontostand().plus(dispo);
 	}
 
 	@Override

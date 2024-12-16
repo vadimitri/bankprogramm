@@ -82,26 +82,8 @@ public class Aktienkonto extends Konto {
         }, 0, TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * Methode, die Geld von Konto abhebt
-     * @param betrag abzuhebender Betrag
-     * @return ob abheben geklappt hat
-     * @throws GesperrtException
-     */
-    @Override
-    public boolean abheben(Geldbetrag betrag) throws GesperrtException{
-        if (betrag == null || betrag.isNegativ()) {
-            throw new IllegalArgumentException("Betrag ungültig");
-        }
-        if(this.isGesperrt())
-            throw new GesperrtException(this.getKontonummer());
-        if (!getKontostand().minus(betrag).isNegativ())
-        {
-            setKontostand(getKontostand().minus(betrag));
-            return true;
-        }
-        else
-            return false;
+    protected Geldbetrag getGrenzwert(Geldbetrag betrag) {
+        return getKontostand();
     }
 
 
