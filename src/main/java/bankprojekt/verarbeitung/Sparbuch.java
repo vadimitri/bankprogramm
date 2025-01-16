@@ -71,21 +71,20 @@ public class Sparbuch extends Konto {
 	}
 
 	@Override
-    protected Geldbetrag getGrenzwert(Geldbetrag betrag) {
+	protected Geldbetrag getGrenzwert(Geldbetrag betrag) {
 		LocalDate heute = LocalDate.now();
-		if(heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear())
-		{
+		if(heute.getMonth() != zeitpunkt.getMonth() || heute.getYear() != zeitpunkt.getYear()) {
 			this.bereitsAbgehoben = new Geldbetrag();
 		}
-		Geldbetrag neu = getKontostand().minus(betrag);
-		Geldbetrag maximalAusgaben = Sparbuch.ABHEBESUMME.minus(bereitsAbgehoben).minus(betrag);
-		if (neu.compareTo(Sparbuch.MINIMUM) >= 0 &&
-				bereitsAbgehoben.plus(betrag).compareTo(Sparbuch.ABHEBESUMME) <= 0)
-		{
-			return neu.compareTo(maximalAusgaben) <= 0 ? neu : maximalAusgaben;
+
+		Geldbetrag neuerKontostand = getKontostand().minus(betrag);
+
+		if (neuerKontostand.compareTo(MINIMUM) >= 0 &&
+				bereitsAbgehoben.plus(betrag).compareTo(ABHEBESUMME) <= 0) {
+			return getKontostand();
 		}
-		else
-			return new Geldbetrag(0.0);
+
+		return new Geldbetrag(Double.MAX_VALUE);
 	}
 
 }

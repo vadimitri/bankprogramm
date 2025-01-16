@@ -23,7 +23,6 @@ public class Bank implements Serializable {
      */
    private final long bankleitzahl;
 
-
     /**
      * Konstruktor, welcher eine Bank erstellt
      * @param bankleitzahl Weitergeleitete Bankleitzahl
@@ -44,48 +43,62 @@ public class Bank implements Serializable {
         return bankleitzahl;
     }
 
+//
+//    /**
+//     * Erstellt ein Girokonto
+//     * @param inhaber Kunde, der Inhaber des Kontos sein wird
+//     * @return Kontonummmer des Girokontos
+//     */
+//    public long girokontoErstellen(Kunde inhaber) {
+//        // speichert den Eintrag, der die hoechste Nummer in der Map hat oder null wenn die Map leer ist
+//        Map.Entry<Long, Konto> hoechsterEntry = kontos.floorEntry(100000000L);
+//        if (hoechsterEntry == null) {
+//            kontos.put(0L, new Girokonto(inhaber, 0L, new Geldbetrag(100)));
+//            return 0L;
+//        }
+//        // Neue Girokontonummer wird um 1 größer als der Größte Wert gespeichert
+//        long neueNummer = hoechsterEntry.getKey() + 1L;
+//        kontos.put(neueNummer, new Girokonto(inhaber, neueNummer, new Geldbetrag(100)));
+//        return neueNummer;
+//    }
+//
+//    /**
+//     * Erstellt ein Sparbuch
+//     * @param inhaber Kunde, der Inhaber des Sparbuchs sein wird
+//     * @return Kontonummer des Sparbuchs
+//     */
+//    public long sparbuchErstellen(Kunde inhaber) {
+//        // speichert den Eintrag, der die hoechste Nummer in der Map hat oder null wenn die Map leer ist
+//        Map.Entry<Long, Konto> hoechsterEntry = kontos.floorEntry(100000000L);
+//        if (hoechsterEntry == null) {
+//            kontos.put(0L, new Sparbuch(inhaber, 0L));
+//            return 0L;
+//        }
+//        // Neue Girokontonummer wird um 1 größer als der Größte Wert gespeichert
+//        long neueNummer = hoechsterEntry.getKey() + 1L;
+//        kontos.put(neueNummer, new Sparbuch(inhaber, neueNummer));
+//        return neueNummer;
+//    }
 
     /**
-     * Erstellt ein Girokonto
-     * @param inhaber Kunde, der Inhaber des Kontos sein wird
-     * @return Kontonummmer des Girokontos
+     * Erstellt ein Konto für den angegebenen Kunden und gibt ihm eine neue einzigartige Kontonummer
+     * @param inhaber Kunde für den ein Konto erstellt wird
+     * @return gibt die vergebene Kontonummer als long zurück
      */
-    public long girokontoErstellen(Kunde inhaber) {
-        // speichert den Eintrag, der die hoechste Nummer in der Map hat oder null wenn die Map leer ist
-        Map.Entry<Long, Konto> hoechsterEntry = kontos.floorEntry(100000000L);
-        if (hoechsterEntry == null) {
-            kontos.put(0L, new Girokonto(inhaber, 0L, new Geldbetrag(100)));
-            return 0L;
+    public long kontoErstellen(Kontofabrik kontofabrik, Kunde inhaber) {
+        if (kontofabrik == null || inhaber == null) {
+            throw new IllegalArgumentException("Kontofabrik und/oder Inhaber dürfen nicht null sein");
         }
-        // Neue Girokontonummer wird um 1 größer als der Größte Wert gespeichert
-        long neueNummer = hoechsterEntry.getKey() + 1L;
-        kontos.put(neueNummer, new Girokonto(inhaber, neueNummer, new Geldbetrag(100)));
+
+        Map.Entry<Long, Konto> hoechsterEntry = kontos.floorEntry(100000000L);
+        long neueNummer = (hoechsterEntry == null) ? 0L : hoechsterEntry.getKey() + 1L;
+
+        Konto neuesKonto = kontofabrik.erzeugeKonto(neueNummer, inhaber);
+        kontos.put(neueNummer, neuesKonto);
+
         return neueNummer;
     }
 
-    /**
-     * Erstellt ein Sparbuch
-     * @param inhaber Kunde, der Inhaber des Sparbuchs sein wird
-     * @return Kontonummer des Sparbuchs
-     */
-    public long sparbuchErstellen(Kunde inhaber) {
-        // speichert den Eintrag, der die hoechste Nummer in der Map hat oder null wenn die Map leer ist
-        Map.Entry<Long, Konto> hoechsterEntry = kontos.floorEntry(100000000L);
-        if (hoechsterEntry == null) {
-            kontos.put(0L, new Sparbuch(inhaber, 0L));
-            return 0L;
-        }
-        // Neue Girokontonummer wird um 1 größer als der Größte Wert gespeichert
-        long neueNummer = hoechsterEntry.getKey() + 1L;
-        kontos.put(neueNummer, new Sparbuch(inhaber, neueNummer));
-        return neueNummer;
-    }
-
-    //Abstract-Factory-Muster (Aufgabe 11)
-
-    public long kontoErstellen(Kontofabrik fabrik, Kunde inhaber) {
-
-    }
 
 
 
@@ -292,40 +305,40 @@ public class Bank implements Serializable {
 
 
 
-    public static void main(String[] args) {
-        try {
-            Bank bank = new Bank(12345678);
-            Kunde kunde1 = new Kunde("Max", "Mustermann", "Musterstr. 1", LocalDate.of(1990, 1, 1));
-            Kunde kunde2 = new Kunde("Erika", "Musterfrau", "Musterstr. 2", LocalDate.of(1995, 2, 2));
-            // Testkontos
-            long konto1 = bank.girokontoErstellen(kunde1);
-            long  konto2 = bank.sparbuchErstellen(kunde2);
-            bank.geldEinzahlen(konto1, new Geldbetrag(1234));
-            bank.geldEinzahlen(konto2, new Geldbetrag(567));
-
-            System.out.println("Bank Objekt 1:");
-            System.out.println(bank.getAlleKonten());
-
-            try (FileOutputStream fos = new FileOutputStream("bank")) {
-                bank.speichern(fos);
-                System.out.println("Bank wurde gespeichert.");
-            }
-
-
-            Bank bank2;
-            try (FileInputStream fis = new FileInputStream("bank")) {
-                bank2 = Bank.einlesen(fis);
-                System.out.println("\n Bank 2:");
-                System.out.println(bank2.getAlleKonten());
-
-                System.out.println("\nBankleitzahl 1: " + bank.getBankleitzahl());
-                System.out.println("Bankleitzahl 2: " + bank2.getBankleitzahl());
-            }
-
-        } catch (IOException | ClassNotFoundException e) {
-            System.err.println("Fehler beim Speichern oder Laden der Bank: " + e.getMessage());
-        }
-    }
+//    public static void main(String[] args) {
+//        try {
+//            Bank bank = new Bank(12345678);
+//            Kunde kunde1 = new Kunde("Max", "Mustermann", "Musterstr. 1", LocalDate.of(1990, 1, 1));
+//            Kunde kunde2 = new Kunde("Erika", "Musterfrau", "Musterstr. 2", LocalDate.of(1995, 2, 2));
+//            // Testkontos
+//            long konto1 = bank.girokontoErstellen(kunde1);
+//            long  konto2 = bank.sparbuchErstellen(kunde2);
+//            bank.geldEinzahlen(konto1, new Geldbetrag(1234));
+//            bank.geldEinzahlen(konto2, new Geldbetrag(567));
+//
+//            System.out.println("Bank Objekt 1:");
+//            System.out.println(bank.getAlleKonten());
+//
+//            try (FileOutputStream fos = new FileOutputStream("bank")) {
+//                bank.speichern(fos);
+//                System.out.println("Bank wurde gespeichert.");
+//            }
+//
+//
+//            Bank bank2;
+//            try (FileInputStream fis = new FileInputStream("bank")) {
+//                bank2 = Bank.einlesen(fis);
+//                System.out.println("\n Bank 2:");
+//                System.out.println(bank2.getAlleKonten());
+//
+//                System.out.println("\nBankleitzahl 1: " + bank.getBankleitzahl());
+//                System.out.println("Bankleitzahl 2: " + bank2.getBankleitzahl());
+//            }
+//
+//        } catch (IOException | ClassNotFoundException e) {
+//            System.err.println("Fehler beim Speichern oder Laden der Bank: " + e.getMessage());
+//        }
+//    }
 
 
 }

@@ -3,6 +3,8 @@ package bankprojekt.verarbeitung;
 import bankprojekt.geld.Waehrung;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * stellt ein allgemeines Bank-Konto dar
@@ -33,12 +35,20 @@ public abstract class Konto implements Comparable<Konto>, Serializable
 	private bankprojekt.verarbeitung.Geldbetrag kontostand;
 
 	/**
+	 * Liste von Kontobeobachtern
+	 */
+	protected List<KontoBeobachter> beobachter = new ArrayList<>();
+
+	/**
 	 * setzt den aktuellen Kontostand
 	 * @param kontostand neuer Kontostand, darf nicht null sein
 	 */
 	protected void setKontostand(Geldbetrag kontostand) {
-		if(kontostand != null)
+		if (kontostand != null) {
+			Geldbetrag alterKontostand = this.kontostand;
 			this.kontostand = kontostand;
+			benachrichtigen(alterKontostand, kontostand);
+		}
 	}
 
 	/**
@@ -258,6 +268,36 @@ public abstract class Konto implements Comparable<Konto>, Serializable
 			throw new NullPointerException();
 		}
 		this.kontostand.umrechnen(neu);
+	}
+
+	/**
+	 * Fügt einen Beobachter hinzu
+	 * @param beobachter Beobachter
+	 */
+	public void addBeobachter(KontoBeobachter beobachter) {
+		if (beobachter != null) {
+			//TODO: Addpropertychangelistener
+			this.beobachter.add(beobachter);
+		}
+	}
+
+	/**
+	 * Entfernt einen Beobachter
+	 * @param beobachter Beobachter
+	 */
+	public void removeBeobachter(KontoBeobachter beobachter) {
+		this.beobachter.remove(beobachter);
+	}
+
+	/**
+	 * Benachrichtigt alle Beobachter
+	 * @param alterKontostand Alter Kontostand
+	 * @param neuerKontostand Neuer Kontostand
+	 */
+	protected void benachrichtigen(Geldbetrag alterKontostand, Geldbetrag neuerKontostand) {
+		for (KontoBeobachter b : beobachter) {
+			b.kontostandGeaendert(this, alterKontostand, neuerKontostand);
+		}
 	}
 
 	public static void main(String[] args) {

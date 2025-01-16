@@ -4,5 +4,5 @@ import bankprojekt.verarbeitung.Konto;
 import bankprojekt.verarbeitung.Kunde;
 
 public abstract class Kontofabrik {
-    protected abstract Konto erzeugeKonto(Kunde inhaber, double startGeld);
+    public abstract Konto erzeugeKonto(long kontonummer, Kunde kunde);
 }

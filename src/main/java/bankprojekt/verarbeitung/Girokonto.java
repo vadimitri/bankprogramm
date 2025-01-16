@@ -55,9 +55,17 @@ public class Girokonto extends UeberweisungsfaehigesKonto{
 	 * @throws IllegalArgumentException wenn dispo negativ bzw. NaN ist
 	 */
 	public void setDispo(Geldbetrag dispo) {
-		if(dispo == null || dispo.isNegativ())
-			throw new IllegalArgumentException("Der Dispo ist nicht gültig!");
-		this.dispo = dispo;
+		if (dispo != null && !dispo.isNegativ()) {
+			Geldbetrag alterDispo = this.dispo;
+			this.dispo = dispo;
+			for (KontoBeobachter b : beobachter) {
+				if (b != null) {
+					b.dispoGeaendert(this, alterDispo, dispo);
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("Der Dispo ist nicht gültig");
+		}
 	}
 	
 	@Override
